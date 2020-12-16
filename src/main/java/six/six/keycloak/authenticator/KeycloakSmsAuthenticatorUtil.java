@@ -122,16 +122,6 @@ public class KeycloakSmsAuthenticatorUtil {
      * @return formatted mobile number
      */
     public static String checkMobileNumber(String mobileNumber) {
-
-        PhoneNumberUtil phoneUtil = PhoneNumberUtil.getInstance();
-        try {
-            Phonenumber.PhoneNumber phone = phoneUtil.parse(mobileNumber, null);
-            mobileNumber = phoneUtil.format(phone,
-                    PhoneNumberUtil.PhoneNumberFormat.E164);
-        } catch (NumberParseException e) {
-            logger.error("Invalid phone number " + mobileNumber, e);
-        }
-
         return mobileNumber;
     }
 
@@ -139,10 +129,10 @@ public class KeycloakSmsAuthenticatorUtil {
     public static String getMessage(AuthenticationFlowContext context, String key){
         String result=null;
         try {
-            ThemeProvider themeProvider = context.getSession().getProvider(ThemeProvider.class, "extending");
-            Theme currentTheme = themeProvider.getTheme(context.getRealm().getLoginTheme(), Theme.Type.LOGIN);
             Locale locale = context.getSession().getContext().resolveLocale(context.getUser());
-            result = currentTheme.getMessages(locale).getProperty(key);
+            Theme theme = context.getSession().theme().getTheme(context.getRealm().getLoginTheme(), Theme.Type.LOGIN);
+            String message = theme.getMessages(locale).getProperty(key);
+            return message;
         }catch (IOException e){
             logger.warn(key + "not found in messages");
         }
@@ -168,7 +158,7 @@ public class KeycloakSmsAuthenticatorUtil {
 
         // Send an SMS
         KeycloakSmsAuthenticatorUtil.logger.debug("Sending " + code + "  to mobileNumber " + mobileNumber);
-
+        String plainToken = getConfigString(config, KeycloakSmsConstants.CONF_PRP_SMS_CLIENTTOKEN);
         String smsUsr = EnvSubstitutor.envSubstitutor.replace(getConfigString(config, KeycloakSmsConstants.CONF_PRP_SMS_CLIENTTOKEN));
         String smsPwd = EnvSubstitutor.envSubstitutor.replace(getConfigString(config, KeycloakSmsConstants.CONF_PRP_SMS_CLIENTSECRET));
         String gateway = getConfigString(config, KeycloakSmsConstants.CONF_PRP_SMS_GATEWAY);
